@@ -1,129 +1,108 @@
 #!/bin/bash
+# Aeon
 
-# Update and upgrade system packages
-update_system() {
-    apt-get update && apt-get upgrade -y
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+TEMP_DIR=$(mktemp -d)
+JDOWNLOADER_HOME="/JDownloader"
+BIN_DIR="/usr/local/bin"
+
+download_files() {
+    mkdir -p "$JDOWNLOADER_HOME" "$BIN_DIR"
+    local arch=$(uname -m)
+    
+    if [ "$arch" = "x86_64" ]; then
+        wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/x86_64-qbittorrent-nox" &
+        # wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/latest/download/ffmpeg-n7.1-latest-linux64-gpl-7.1.tar.xz" &
+        wget -qO "$TEMP_DIR/uv.tar.gz" "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz" &
+    else
+        wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/aarch64-qbittorrent-nox" &
+        # wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/latest/download/ffmpeg-n7.1-latest-linuxarm64-gpl-7.1.tar.xz" &
+        wget -qO "$TEMP_DIR/uv.tar.gz" "https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-unknown-linux-gnu.tar.gz" &
+    fi
+    wget -qO "$JDOWNLOADER_HOME/JDownloader.jar" http://installer.jdownloader.org/JDownloader.jar &
+    
+    wait
 }
 
-# Install Python 3.12 and essential dependencies
-install_python() {
-    apt-get install -y software-properties-common
-    add-apt-repository -y ppa:deadsnakes/ppa
+install_packages() {
     apt-get update
-    apt-get install -y python3.12 python3.12-dev python3.12-venv python3-pip libpython3.12 libpython3.12-dev
-}
-
-# Install additional system dependencies
-install_dependencies() {
+    apt-get upgrade -y
     apt-get install -y --no-install-recommends \
-        apt-utils aria2 curl zstd git libmagic-dev \
-        locales mediainfo neofetch p7zip-full \
-        p7zip-rar tzdata wget autoconf automake \
-        build-essential cmake g++ gcc gettext \
-        gpg-agent intltool libtool make unzip zip \
-        libcurl4-openssl-dev libsodium-dev libssl-dev \
-        libcrypto++-dev libc-ares-dev libsqlite3-dev \
-        libfreeimage-dev swig libboost-all-dev \
-        libpthread-stubs0-dev zlib1g-dev
+        python3.13 \
+        libpython3.13 \
+        sabnzbdplus \
+        aria2 \
+        ffmpeg \
+        curl \
+        zstd \
+        xz-utils \
+        git \
+        libmagic-dev \
+        mediainfo \
+        p7zip-full \
+        p7zip-rar \
+        tzdata \
+        wget \
+        openjdk-21-jre \
+        openjdk-21-jre-headless
+
+    ln -sf /usr/bin/python3.13 /usr/bin/python3
+    ln -sf /usr/bin/python3.13 /usr/bin/python
 }
 
-# Download and install qbittorrent-nox based on system architecture
-install_qbittorrent() {
-    ARCH=$(uname -m)
-    mkdir -p /usr/local/bin
-
-    case "$ARCH" in
-        x86_64)
-            wget -qO /usr/local/bin/xnox https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/x86_64-qbittorrent-nox
-            ;;
-        aarch64)
-            wget -qO /usr/local/bin/xnox https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/aarch64-qbittorrent-nox
-            ;;
-        *)
-            echo "Unsupported architecture for qbittorrent-nox: $ARCH"
-            exit 1
-            ;;
-    esac
-
-    chmod 700 /usr/local/bin/xnox
-}
-
-# Install FFmpeg based on system architecture
-install_ffmpeg() {
-    ARCH=$(uname -m)
-    mkdir -p /Temp
-    cd /Temp
-
-    case "$ARCH" in
-        x86_64)
-            wget https://github.com/5hojib/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-gpl-7.1.tar.xz
-            ;;
-        aarch64)
-            wget https://github.com/5hojib/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linuxarm64-gpl-7.1.tar.xz
-            ;;
-        *)
-            echo "Unsupported architecture for FFmpeg: $ARCH"
-            exit 1
-            ;;
-    esac
-
-    7z x ffmpeg-n7.1-latest-linux*-gpl-7.1.tar.xz
-    7z x ffmpeg-n7.1-latest-linux*-gpl-7.1.tar
-    mv /Temp/ffmpeg-n7.1-latest-linux*/bin/ffmpeg /usr/bin/xtra
-    mv /Temp/ffmpeg-n7.1-latest-linux*/bin/ffprobe /usr/bin/ffprobe
-    mv /Temp/ffmpeg-n7.1-latest-linux*/bin/ffplay /usr/bin/ffplay
-    chmod +x /usr/bin/xtra /usr/bin/ffprobe /usr/bin/ffplay
-}
-
-# Install rclone and rename binaries
-install_rclone() {
+process_files() {
+    chmod 700 "$BIN_DIR/xnox"
+    
+    # Extract FFmpeg
+    # tar -xf "$TEMP_DIR/ffmpeg.tar.xz" -C "$TEMP_DIR"
+    # local ffmpeg_dir=$(find "$TEMP_DIR" -type d -name "ffmpeg-n7.1-latest-linux*" | head -n 1)
+    # mv "$ffmpeg_dir/bin/ffmpeg" /usr/bin/xtra
+    # mv "$ffmpeg_dir/bin/ffprobe" /usr/bin/ffprobe
+    # mv "$ffmpeg_dir/bin/ffplay" /usr/bin/ffplay
+    # chmod +x /usr/bin/xtra /usr/bin/ffprobe /usr/bin/ffplay
+    
+    # Extract UV
+    tar -xzf "$TEMP_DIR/uv.tar.gz" -C "$TEMP_DIR"
+    mv $(find "$TEMP_DIR" -type f -name "uv" | head -n 1) /usr/bin/uv
+    chmod +x /usr/bin/uv
+    
     curl https://rclone.org/install.sh | bash
+
     mv /usr/bin/rclone /usr/bin/xone
     mv /usr/bin/aria2c /usr/bin/xria
+    mv /usr/bin/ffmpeg /usr/bin/xtra
+    mv /usr/bin/sabnzbdplus /usr/bin/xnzb
 }
 
-# Install Python packages
-install_python_packages() {
-    pip3 install --break-system-packages --no-cache-dir -U setuptools uv
-}
-
-# Clone and build MEGA SDK
-build_mega_sdk() {
-    git clone https://github.com/meganz/sdk.git --depth=1 -b v4.8.0 /home/sdk
-    cd /home/sdk
-    rm -rf .git
-    autoupdate -fIv && ./autogen.sh
-    ./configure --disable-silent-rules --enable-python --with-sodium --disable-examples
-    make -j$(nproc --all)
-
-    cd bindings/python/
-    python3.12 setup.py bdist_wheel
-    pip3 install --break-system-packages --no-cache-dir dist/megasdk-4.8.0-*.whl
-}
-
-# Clean up unnecessary packages and temporary files
 cleanup() {
-    apt-get remove -y \
-        autoconf automake build-essential cmake g++ gcc gettext \
-        gpg-agent intltool libtool make unzip zip libcurl4-openssl-dev \
-        libssl-dev libc-ares-dev libsqlite3-dev swig libboost-all-dev \
-        libpthread-stubs0-dev zlib1g-dev
-    apt-get autoremove -y
+    apt-get purge -y wget \
+        perl \
+        xz-utils \
+        perl-modules-5.40
+    apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        cpulimit
+    apt-get autoremove -y --purge
     apt-get autoclean -y
-
-    rm -rf /Temp Aeon Dockerfile
+    apt-get clean -y
+    rm -rf \
+        /var/lib/apt/lists/* \
+        "$TEMP_DIR" \
+        Aeon \
+        Dockerfile \
+        ~/.cache \
+        /tmp/* \
+        /var/tmp/*
 }
 
-# Main script execution
 main() {
-    update_system
-    install_python
-    install_dependencies
-    install_qbittorrent
-    install_ffmpeg
-    install_rclone
-    install_python_packages
-    build_mega_sdk
+    install_packages
+    download_files
+    process_files
     cleanup
 }
 

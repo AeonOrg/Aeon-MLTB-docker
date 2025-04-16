@@ -1,5 +1,3 @@
-FROM ubuntu:24.10
-ENV DEBIAN_FRONTEND=noninteractive
-
+FROM ubuntu:25.04
 COPY . .
 RUN bash Aeon
