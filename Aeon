@@ -15,11 +15,11 @@ download_files() {
     
     if [ "$arch" = "x86_64" ]; then
         wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/x86_64-qbittorrent-nox" &
-        # wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/latest/download/ffmpeg-n7.1-latest-linux64-gpl-7.1.tar.xz" &
+        wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-gpl-7.1.tar.xz" &
         wget -qO "$TEMP_DIR/uv.tar.gz" "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-unknown-linux-gnu.tar.gz" &
     else
         wget -qO "$BIN_DIR/xnox" "https://github.com/userdocs/qbittorrent-nox-static/releases/latest/download/aarch64-qbittorrent-nox" &
-        # wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/latest/download/ffmpeg-n7.1-latest-linuxarm64-gpl-7.1.tar.xz" &
+        wget -qO "$TEMP_DIR/ffmpeg.tar.xz" "https://github.com/5hojib/FFmpeg-Builds/releases/latest/download/ffmpeg-n7.1-latest-linuxarm64-gpl-7.1.tar.xz" &
         wget -qO "$TEMP_DIR/uv.tar.gz" "https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-unknown-linux-gnu.tar.gz" &
     fi
     wget -qO "$JDOWNLOADER_HOME/JDownloader.jar" http://installer.jdownloader.org/JDownloader.jar &
@@ -35,13 +35,11 @@ install_packages() {
         libpython3.13 \
         sabnzbdplus \
         aria2 \
-        ffmpeg \
         curl \
         zstd \
         xz-utils \
         git \
         libmagic-dev \
-        mediainfo \
         p7zip-full \
         p7zip-rar \
         tzdata \
@@ -53,27 +51,28 @@ install_packages() {
     ln -sf /usr/bin/python3.13 /usr/bin/python
 }
 
+# Process and move files
 process_files() {
     chmod 700 "$BIN_DIR/xnox"
     
     # Extract FFmpeg
-    # tar -xf "$TEMP_DIR/ffmpeg.tar.xz" -C "$TEMP_DIR"
-    # local ffmpeg_dir=$(find "$TEMP_DIR" -type d -name "ffmpeg-n7.1-latest-linux*" | head -n 1)
-    # mv "$ffmpeg_dir/bin/ffmpeg" /usr/bin/xtra
-    # mv "$ffmpeg_dir/bin/ffprobe" /usr/bin/ffprobe
-    # mv "$ffmpeg_dir/bin/ffplay" /usr/bin/ffplay
-    # chmod +x /usr/bin/xtra /usr/bin/ffprobe /usr/bin/ffplay
+    tar -xf "$TEMP_DIR/ffmpeg.tar.xz" -C "$TEMP_DIR"
+    local ffmpeg_dir=$(find "$TEMP_DIR" -type d -name "ffmpeg-n7.1-latest-linux*" | head -n 1)
+    mv "$ffmpeg_dir/bin/ffmpeg" /usr/bin/xtra
+    mv "$ffmpeg_dir/bin/ffprobe" /usr/bin/ffprobe
+    mv "$ffmpeg_dir/bin/ffplay" /usr/bin/ffplay
+    chmod +x /usr/bin/xtra /usr/bin/ffprobe /usr/bin/ffplay
     
     # Extract UV
     tar -xzf "$TEMP_DIR/uv.tar.gz" -C "$TEMP_DIR"
     mv $(find "$TEMP_DIR" -type f -name "uv" | head -n 1) /usr/bin/uv
     chmod +x /usr/bin/uv
     
+    # Install rclone
     curl https://rclone.org/install.sh | bash
-
     mv /usr/bin/rclone /usr/bin/xone
     mv /usr/bin/aria2c /usr/bin/xria
-    mv /usr/bin/ffmpeg /usr/bin/xtra
+    # mv /usr/bin/ffmpeg /usr/bin/xtra
     mv /usr/bin/sabnzbdplus /usr/bin/xnzb
 }
 
